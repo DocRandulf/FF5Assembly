@@ -15774,6 +15774,7 @@ endif
 %org($C26EBC)
 ;Attack Type 30 (Fists)
 ;Param1: Crit%
+if not(!_CombatTweaks)
 Attack30:
 	JSR SetHit100andTargetEvade				;C2/6EBC: 20 47 7C     JSR $7C47  (Hit = 100, Evade = Evade)
 	JSR HitPhysical						;C2/6EBF: 20 BE 7E     JSR $7EBE  (Hit Determination for physical)
@@ -15791,6 +15792,7 @@ Attack30:
 	JSR CheckCrit 						;C2/6EDA: 20 DF 87     JSR $87DF  (Check for Critical)
 	JSR CalcFinalDamage					;C2/6EDD: 20 05 8A     JSR $8A05  (Calculate Magic Final Damage)
 	RTS 							;C2/6EE0: 60           RTS 
+endif
 
 %org($C26EE1)
 ;Attack Type 31 (Swords)
@@ -15829,6 +15831,7 @@ endif
 ;Attack Type 32 (Knives)
 ;Param1: Element
 ;Param2/3: Proc% and Proc, not handled here
+if not(!_CombatTweaks)
 Attack32:
 	JSR SetHit100andHalfTargetEvade					;C2/6F1E: 20 53 7C     JSR $7C53  Hit = 100%, Evade = Evade/2
 	JSR HitPhysical							;C2/6F21: 20 BE 7E     JSR $7EBE  Hit% Determination for physical
@@ -15853,7 +15856,8 @@ Attack32:
 	JMP ApplyMSwordStatus 						;C2/6F50: 4C CF 8B     JMP $8BCF  (Check for Magic Sword Status Effects)
 .Miss	LDA #$80							;C2/6F53: A9 80        LDA #$80
 	STA AtkMissed							;C2/6F55: 85 56        STA $56
-.Ret	RTS 								;C2/6F57: 60           RTS 
+.Ret	RTS 								;C2/6F57: 60           RTS
+endif
 
 %org($C26F58)
 ;Attack Type 33 (Spears)
@@ -17147,6 +17151,7 @@ Attack63:
 %org($C27774)
 ;Attack Type 64 (Chicken Knife)
 ;Param2/3: Proc% and Proc, not handled here
+if not(!_CombatTweaks)
 Attack64:
 	JSR SetHit100andHalfTargetEvade					;C2/7774: 20 53 7C     JSR $7C53  (Hit = 100, Evade = Evade/2)
 	JSR HitPhysical							;C2/7777: 20 BE 7E     JSR $7EBE  (Hit Determination for physical)
@@ -17168,6 +17173,7 @@ Attack64:
 	STA AtkMissed							;C2/77A0: 85 56        STA $56
 	RTS 								;C2/77A2: 60           RTS 
 .Ret	RTS 			;**optimize, get rid of this		;C2/77A3: 60           RTS 
+endif
 
 %org($C277A4)
 ;Attack Type 65 (Interceptor Rocket)
@@ -17404,6 +17410,7 @@ Attack6D:
 
 %org($C2791B)
 ;Attack Type 6E (Brave Blade)
+if not(!_CombatTweaks)
 Attack6E:
 	JSR SetHit100andTargetEvade					;C2/791B: 20 47 7C     JSR $7C47  (Hit = 100, Evade = Evade)
 	JSR HitPhysical 						;C2/791E: 20 BE 7E     JSR $7EBE  (Hit Determination for physical)
@@ -17425,6 +17432,7 @@ Attack6E:
 .Miss	LDA #$80							;C2/7948: A9 80        LDA #$80
 	STA AtkMissed							;C2/794A: 85 56        STA $56
 .Ret	RTS 								;C2/794C: 60           RTS 
+endif
 
 %org($C2794D)
 ;Attack Type 6F (Strong Fight)
@@ -19009,6 +19017,7 @@ DoubleGripMod:
 %org($C28452)
 ;Check for Jump
 ;**optimize: save some bytes by shifting in 8 bit mode to avoid mode switches
+if not(!_CombatTweaks)
 CheckJump:
 	LDX AttackerOffset						;C2/8452: A6 32        LDX $32
 	LDA CharStruct.CmdStatus,X					;C2/8454: BD 1E 20     LDA $201E,X 
@@ -19022,6 +19031,7 @@ CheckJump:
 									;
 .NoJump	JSR BackRowMod							;C2/8463: 20 9B 83     JSR $839B    (Check for Back Row Modifications)
 	RTS 								;C2/8466: 60           RTS 
+endif
 
 %org($C28467)
 ;Bonus to Attack, costing MP

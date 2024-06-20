@@ -21,6 +21,25 @@ Attack2F:
 	JMP Attack07_Status	;Vanilla Gravity/Harp routine, status portion
 .Ret	RTS
 
+;Attack Type 30 (Fists)
+;Tweaks Adds Jump and Magic Sword modifiers (Blazing Fists are cool)
+;Param1: Crit%
+Attack30:
+	JSR SetHit100andTargetEvade				;C2/6EBC: 20 47 7C     JSR $7C47  (Hit = 100, Evade = Evade)
+	JSR HitPhysical						;C2/6EBF: 20 BE 7E     JSR $7EBE  (Hit Determination for physical)
+	LDA AtkMissed						;C2/6EC2: A5 56        LDA $56
+	BEQ .Hit						;C2/6EC4: F0 05        BEQ $6ECB
+	JMP PhysMiss
+.Hit	JSR FistDamage 						;C2/6ECB: 20 3E 80     JSR $803E  (Fists Damage Formula)
+	JSR BackRowMod 						;C2/6ECE: 20 9B 83     JSR $839B  (Check Back Row Modifications)
+	JSR CheckJump
+	JSR CommandMod 						;C2/6ED1: 20 BD 83     JSR $83BD  (Check for Command Modifiers)
+	JSR TargetStatusModPhys					;C2/6ED4: 20 12 85     JSR $8512  (Check Target Status Effect Modifiers to Physical Damage)
+	JSR AttackerStatusModPhys				;C2/6ED7: 20 33 85     JSR $8533  (Check Attacker Status Effect Modifiers to Physical Damage)
+	JMP MagicSwordMod
+	JSR CheckCrit 						;C2/6EDA: 20 DF 87     JSR $87DF  (Check for Critical)
+	JMP StandardMSwordFinish	
+
 ;Attack Type 31 (Swords)
 ;Tweaks: No gameplay changes, just using utility routines to save space
 ;Param1: Element
@@ -37,7 +56,28 @@ Attack31:
 	JSR StandardMSwordMods	
 	JSR PhysElement					
 	JMP StandardMSwordFinish	
-						
+
+;Attack Type 32 (Knives)
+;Tweak Adding Jump
+;Param1: Element
+;Param2/3: Proc% and Proc, not handled here
+Attack32:
+	JSR SetHit100andHalfTargetEvade					;C2/6F1E: 20 53 7C     JSR $7C53  Hit = 100%, Evade = Evade/2
+	JSR HitPhysical							;C2/6F21: 20 BE 7E     JSR $7EBE  Hit% Determination for physical
+	LDA AtkMissed				
+	BEQ .Hit
+	JMP PhysMiss
+.Hit	JSR KnifeDamage							;C2/6F28: 20 D4 80     JSR $80D4  (Knives Damage Formula)
+	JSR CheckJump
+	JSR BackRowMod							;C2/6F2B: 20 9B 83     JSR $839B  (Check Back Row Modifications)
+	JSR CommandMod 							;C2/6F2E: 20 BD 83     JSR $83BD  (Check for Command Modifiers)
+	JSR TargetStatusModPhys						;C2/6F31: 20 12 85     JSR $8512  (Check Target Status Effect Modifiers to Physical Damage)
+	JSR AttackerStatusModPhys					;C2/6F34: 20 33 85     JSR $8533  (Check Attacker Status Effect Modifiers to Physical Damage)
+	JSR MagicSwordMod						;C2/6F37: 20 84 86     JSR $8684  (Check Magic Sword Modifiers)
+	JSR PhysElement	
+	JMP StandardMSwordFinish	
+.Ret	RTS 								;C2/6F57: 60           RTS 
+
 ;Attack Type 33 (Spears)
 ;Tweaks: Adding Double Hand and Magic Sword
 ;Param1: Element
@@ -48,14 +88,13 @@ Attack33:
 	LDA AtkMissed							
 	BEQ .Hit
 	JMP PhysMiss
-.Hit	JSR SwordDamage 												
-	JSR CheckJump  							
+.Hit	JSR SwordDamage 						
 	JSR StandardMSwordMods	
 	JSR PhysElement					
 	JMP StandardMSwordFinish	
 
 ;Attack Type 34 (Axes)
-;Tweaks: Adding Magic Sword
+;Tweaks: Adding Magic Sword and Jump
 ;Param1: Hit%
 ;Param2/3: Proc% and Proc, not handled here
 Attack34:
@@ -70,7 +109,7 @@ Attack34:
 	JMP StandardMSwordFinish							
 
 ;Attack Type 37 (Katanas)
-;Tweaks: Adding Magic Sword
+;Tweaks: Adding Magic Sword and Jump
 ;Param1: Crit%
 ;Param2/3: Proc% and Proc, not handled here
 Attack37:
@@ -86,7 +125,7 @@ Attack37:
 	JMP StandardMSwordFinish	
 
 ;Attack Type 3A (Long Reach Axes)
-;Tweaks: Adding Magic Sword
+;Tweaks: Adding Magic Sword and Jump
 ;Param1: Hit%
 ;Param2/3: Proc% and Proc, not handled here
 Attack3A:
@@ -100,7 +139,7 @@ Attack3A:
 	JMP StandardMSwordFinish
 	
 ;Attack Type 3C (Rune Weapons)
-;Tweaks: Adding Magic Sword
+;Tweaks: Adding Magic Sword and Jump
 ;Param1: Hit%
 ;Param2: Rune Damage Boost
 ;Param3: Rune MP Cost
@@ -116,6 +155,38 @@ Attack3C:
 	JSR StandardMSwordMods	
 	JMP StandardMSwordFinish					
 
+;Attack Type 64 (Chicken Knife)
+;Tweaks: Adding Jump
+;Param2/3: Proc% and Proc, not handled here
+Attack64:
+	JSR SetHit100andHalfTargetEvade					;C2/7774: 20 53 7C     JSR $7C53  (Hit = 100, Evade = Evade/2)
+	JSR HitPhysical							;C2/7777: 20 BE 7E     JSR $7EBE  (Hit Determination for physical)
+	LDA AtkMissed							;C2/777A: A5 56        LDA $56						
+	BEQ .Hit
+	JMP PhysMiss	
+.Hit	JSR ChickenDamage						;C2/777E: 20 26 86     JSR $8626  (Chicken Knife Damage formula)
+	JSR BackRowMod							;C2/7781: 20 9B 83     JSR $839B  (Back Row Modifications to Damage)
+	JSR CheckJump
+	JSR CommandMod							;C2/7784: 20 BD 83     JSR $83BD  (Command Modifiers to Damage)
+	JSR TargetStatusModPhys						;C2/7787: 20 12 85     JSR $8512  (Target Status Effect Modifiers to Damage)
+	JSR AttackerStatusModPhys					;C2/778A: 20 33 85     JSR $8533  (Attacker Status Effect Modifiers to Damage)
+	JSR MagicSwordMod						;C2/778D: 20 84 86     JSR $8684  (Magic Sword Modifiers)
+	JMP StandardMSwordFinish	
+.Ret	RTS 			;**optimize, get rid of this		;C2/77A3: 60           RTS 
+
+;Attack Type 6E (Brave Blade)
+Attack6E:
+	JSR SetHit100andTargetEvade
+	JSR HitPhysical							
+	LDA AtkMissed								
+	BEQ .Hit
+	JMP PhysMiss	
+.Hit	JSR BraveDamage							
+	JSR BackRowMod 							
+	JSR StandardMSwordMods
+	JSR StandardMSwordFinish
+.Ret	RTS 								
+
 ;Attack Type 73 (Spears Strong vs. Creature)
 ;Tweaks: Adding Magic Sword
 ;Param1: Creature Type
@@ -125,13 +196,32 @@ Attack73:
 	LDA AtkMissed							
 	BEQ .Hit
 	JMP PhysMiss	
-.Hit	JSR SwordDamage													
-	JSR CheckJump
+.Hit	JSR SwordDamage			
 	JSR StandardMSwordMods		
 	JSR CheckCreatureCrit
 	JMP StandardMSwordFinish	
 	
-	
+
+;Check for Jump
+;**optimize: save some bytes by shifting in 8 bit mode to avoid mode switches
+CheckJump:
+	LDX AttackerOffset						;C2/8452: A6 32        LDX $32
+	LDA CharStruct.CmdStatus,X					;C2/8454: BD 1E 20     LDA $201E,X 
+	AND #$10				;Jumping		;C2/8457: 29 10        AND #$10
+	BEQ .NoJump 							;C2/8459: F0 08        BEQ $8463    (If Attacker is Not Jumping)
+	REP #$20									;C2/854E: C2 20        REP #$20		
+	LDA Attack									;Damage = Damage		
+	ASL           								;Damage = Damage * 2
+	CLC 										;		
+	ADC Attack    								;Damage = Damage + (Damage * 2)
+	LSR           								;Damage = (Damage + (Damage * 2))/2
+	STA Attack									;
+	TDC 										;
+	SEP #$20									;
+	RTS 								;C2/8462: 60           RTS 
+.NoJump	JSR BackRowMod							;C2/8463: 20 9B 83     JSR $839B    (Check for Back Row Modifications)
+	RTS 								;C2/8466: 60           RTS 
+
 ;Utility Routines
 
 PhysMiss:
@@ -153,7 +243,8 @@ PhysElement:
 	STA AtkElement							
 	JSR ElementDamageModPhys		
 	
-StandardMSwordMods:
+StandardMSwordMods:										
+	JSR CheckJump
 	JSR CommandMod							
 	JSR DoubleGripMod						
 	JSR TargetStatusModPhys						
