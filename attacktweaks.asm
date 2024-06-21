@@ -36,7 +36,8 @@ Attack30:
 	JSR CommandMod 						;C2/6ED1: 20 BD 83     JSR $83BD  (Check for Command Modifiers)
 	JSR TargetStatusModPhys					;C2/6ED4: 20 12 85     JSR $8512  (Check Target Status Effect Modifiers to Physical Damage)
 	JSR AttackerStatusModPhys				;C2/6ED7: 20 33 85     JSR $8533  (Check Attacker Status Effect Modifiers to Physical Damage)
-	JMP MagicSwordMod
+	JSR CheckRuneEdge
+	JSR MagicSwordMod
 	JSR CheckCrit 						;C2/6EDA: 20 DF 87     JSR $87DF  (Check for Critical)
 	JMP StandardMSwordFinish	
 
@@ -73,6 +74,7 @@ Attack32:
 	JSR CommandMod 							;C2/6F2E: 20 BD 83     JSR $83BD  (Check for Command Modifiers)
 	JSR TargetStatusModPhys						;C2/6F31: 20 12 85     JSR $8512  (Check Target Status Effect Modifiers to Physical Damage)
 	JSR AttackerStatusModPhys					;C2/6F34: 20 33 85     JSR $8533  (Check Attacker Status Effect Modifiers to Physical Damage)
+	JSR CheckRuneEdge
 	JSR MagicSwordMod						;C2/6F37: 20 84 86     JSR $8684  (Check Magic Sword Modifiers)
 	JSR PhysElement	
 	JMP StandardMSwordFinish	
@@ -88,7 +90,8 @@ Attack33:
 	LDA AtkMissed							
 	BEQ .Hit
 	JMP PhysMiss
-.Hit	JSR SwordDamage 						
+.Hit	JSR SwordDamage
+	JSR BackRowMod 						
 	JSR StandardMSwordMods	
 	JSR PhysElement					
 	JMP StandardMSwordFinish	
@@ -170,6 +173,7 @@ Attack64:
 	JSR CommandMod							;C2/7784: 20 BD 83     JSR $83BD  (Command Modifiers to Damage)
 	JSR TargetStatusModPhys						;C2/7787: 20 12 85     JSR $8512  (Target Status Effect Modifiers to Damage)
 	JSR AttackerStatusModPhys					;C2/778A: 20 33 85     JSR $8533  (Attacker Status Effect Modifiers to Damage)
+	JSR CheckRuneEdge
 	JSR MagicSwordMod						;C2/778D: 20 84 86     JSR $8684  (Magic Sword Modifiers)
 	JMP StandardMSwordFinish	
 .Ret	RTS 			;**optimize, get rid of this		;C2/77A3: 60           RTS 
@@ -196,31 +200,64 @@ Attack73:
 	LDA AtkMissed							
 	BEQ .Hit
 	JMP PhysMiss	
-.Hit	JSR SwordDamage			
+.Hit	JSR SwordDamage
+	JSR BackRowMod			
 	JSR StandardMSwordMods		
 	JSR CheckCreatureCrit
 	JMP StandardMSwordFinish	
 	
-
 ;Check for Jump
 ;**optimize: save some bytes by shifting in 8 bit mode to avoid mode switches
 CheckJump:
-	LDX AttackerOffset						;C2/8452: A6 32        LDX $32
-	LDA CharStruct.CmdStatus,X					;C2/8454: BD 1E 20     LDA $201E,X 
-	AND #$10				;Jumping		;C2/8457: 29 10        AND #$10
-	BEQ .NoJump 							;C2/8459: F0 08        BEQ $8463    (If Attacker is Not Jumping)
-	REP #$20									;C2/854E: C2 20        REP #$20		
-	LDA Attack									;Damage = Damage		
-	ASL           								;Damage = Damage * 2
-	CLC 										;		
-	ADC Attack    								;Damage = Damage + (Damage * 2)
-	LSR           								;Damage = (Damage + (Damage * 2))/2
-	STA Attack									;
-	TDC 										;
-	SEP #$20									;
-	RTS 								;C2/8462: 60           RTS 
-.NoJump	JSR BackRowMod							;C2/8463: 20 9B 83     JSR $839B    (Check for Back Row Modifications)
-	RTS 								;C2/8466: 60           RTS 
+	LDX AttackerOffset			;
+	LDA CharStruct.CmdStatus,X	;
+	AND #$10					;
+	BEQ .NoJump 				;(If Attacker is Not Jumping)
+	REP #$20					;	
+	LDA Attack					;Damage = Damage		
+	ASL           				;Damage = Damage * 2
+	CLC 						;		
+	ADC Attack    				;Damage = Damage + (Damage * 2)
+	LSR           				;Damage = (Damage + (Damage * 2))/2
+	STA Attack					;
+	TDC 						;
+	SEP #$20					;
+.NoJump		RTS 				;
+
+CheckRuneEdge:
+	LDX AttackerOffset				;
+	LDA CharStruct.Passives1,X		;Load Passives
+	AND #$08    					;(We're using the bit for Dash)
+	BEQ .Ret
+	REP #$20						;
+	LDX AttackerOffset				;
+	LDA CharStruct.CurMP,X			;
+	CMP #$0005						;Can we pay the 5 MP?
+	BCC .Abort   					;not enough MP? Abort
+	SEC 							;
+	SBC #$0005						;(Subtract 5 MP)
+	STA CharStruct.CurMP,X			;
+	CLC 							;
+	LDA Attack						;Load Current Attack
+	ADC #$000A						;Add the bonus 10 damange
+	STA Attack     					;Store
+	TDC 							;
+	SEP #$20						;
+	LDA MagicPower   				;(Magic Power)
+	JSR StatTimesLevel				;Stat * Level, returns in 16 bit mode
+	JSR ShiftDivide_128				;M = (Level * Magic Power)/128
+	CLC 							;
+	ADC M							;
+	STA M 							;(M = M + (Level * Magic Power)/128)
+	TDC 							;
+	SEP #$20						;
+	INC Crit						;
+	RTS 							;
+.Abort	TDC 						;
+	SEP #$20						;
+.Ret	RTS 						;
+
+
 
 ;Utility Routines
 
@@ -241,14 +278,16 @@ StandardMSwordFinish:
 PhysElement:
 	LDA Param1							
 	STA AtkElement							
-	JSR ElementDamageModPhys		
+	JSR ElementDamageModPhys
+	RTS		
 	
 StandardMSwordMods:										
 	JSR CheckJump
 	JSR CommandMod							
-	JSR DoubleGripMod						
+	JSR DoubleGripMod				
 	JSR TargetStatusModPhys						
-	JSR AttackerStatusModPhys					
-	JMP MagicSwordMod
-	
+	JSR AttackerStatusModPhys
+	JSR CheckRuneEdge							
+	JSR MagicSwordMod
+	RTS
 

@@ -2,12 +2,12 @@
 padbyte $00
 
 ;Gameplay Options
-!_CombatTweaks = 0		;applies combat formula tweaks, changing gameplay
+!_CombatTweaks = 1		;applies combat formula tweaks, changing gameplay
 				;actual code for this is in other asm files, but it removes the original code in this file when set
 				;does not support StaticMode (will overflow size checks)
 
 ;Assembly Options (mostly for testing)
-!_DumpAddr = 0			;prints all org addresses to console
+!_DumpAddr = 1			;prints all org addresses to console
 
 !_StaticMode = 0		;keeps functions and tables at their original starting location
 				;restricts code size per-routine to the same size as the original
